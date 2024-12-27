@@ -16,7 +16,7 @@ const app = express();
 // Habilitar CORS
 
 app.use(cors({
-    origin: 'https://seu-frontend.netlify.app',  
+    origin: 'https://screen-recorder-react.netlify.app/',  
   }));
 
 
