@@ -14,7 +14,10 @@ const __dirname = dirname(__filename);
 const app = express();
 
 // Habilitar CORS
-app.use(cors());
+
+app.use(cors({
+    origin: 'https://seu-frontend.netlify.app',  // Substitua pelo seu domínio do Netlify
+  }));
 
 // Configuração do Multer para salvar o arquivo temporariamente
 const upload = multer({ dest: 'uploads/' });
