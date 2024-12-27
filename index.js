@@ -16,13 +16,13 @@ const app = express();
 // Habilitar CORS
 
 app.use(cors({
-    origin: 'https://seu-frontend.netlify.app',  // Substitua pelo seu domínio do Netlify
+    origin: 'https://seu-frontend.netlify.app',  
   }));
 
-// Configuração do Multer para salvar o arquivo temporariamente
+
 const upload = multer({ dest: 'uploads/' });
 
-// Rota para upload de vídeos
+
 app.post('/upload', upload.single('video'), (req, res) => {
   if (!req.file) {
     console.error('Nenhum arquivo enviado');
@@ -35,21 +35,21 @@ app.post('/upload', upload.single('video'), (req, res) => {
   console.log('Arquivo recebido:', inputFilePath);
   console.log('Caminho do arquivo de saída:', outputFilePath);
 
-  // Convertendo o arquivo .webm para .mp4 com FFmpeg
+
   ffmpeg(inputFilePath)
     .output(outputFilePath)
     .withVideoCodec('libx264')
     .withAudioCodec('aac')
     .on('end', () => {
       console.log('Conversão finalizada');
-      // Enviar o arquivo convertido para o cliente
+   
       res.download(outputFilePath, 'converted-video.mp4', (err) => {
         if (err) {
           console.error('Erro ao enviar o arquivo:', err);
         }
-        // Limpeza de arquivos temporários
-        fs.unlinkSync(inputFilePath); // Deletando o arquivo original
-        fs.unlinkSync(outputFilePath); // Deletando o arquivo convertido
+      
+        fs.unlinkSync(inputFilePath); 
+        fs.unlinkSync(outputFilePath); 
       });
     })
     .on('error', (err) => {
