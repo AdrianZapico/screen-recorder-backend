@@ -4,20 +4,17 @@ import multer from 'multer';
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Obtendo o diretório atual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
-// Habilitar CORS e permitir a origem específica
-const allowedOrigins = ['https://screen-recorder-react.netlify.app']; // Adicione seu domínio aqui
-app.use(cors({
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin) || !origin) { // Permitir requisições locais
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-}));
+// Habilitar CORS
+app.use(cors());
 
 // Configuração do Multer para salvar o arquivo temporariamente
 const upload = multer({ dest: 'uploads/' });
@@ -25,11 +22,15 @@ const upload = multer({ dest: 'uploads/' });
 // Rota para upload de vídeos
 app.post('/upload', upload.single('video'), (req, res) => {
   if (!req.file) {
+    console.error('Nenhum arquivo enviado');
     return res.status(400).send('Nenhum arquivo enviado.');
   }
 
   const inputFilePath = req.file.path;
   const outputFilePath = path.join(__dirname, 'uploads', `${Date.now()}.mp4`);
+
+  console.log('Arquivo recebido:', inputFilePath);
+  console.log('Caminho do arquivo de saída:', outputFilePath);
 
   // Convertendo o arquivo .webm para .mp4 com FFmpeg
   ffmpeg(inputFilePath)
@@ -37,10 +38,13 @@ app.post('/upload', upload.single('video'), (req, res) => {
     .withVideoCodec('libx264')
     .withAudioCodec('aac')
     .on('end', () => {
+      console.log('Conversão finalizada');
+      // Enviar o arquivo convertido para o cliente
       res.download(outputFilePath, 'converted-video.mp4', (err) => {
         if (err) {
           console.error('Erro ao enviar o arquivo:', err);
         }
+        // Limpeza de arquivos temporários
         fs.unlinkSync(inputFilePath); // Deletando o arquivo original
         fs.unlinkSync(outputFilePath); // Deletando o arquivo convertido
       });
@@ -52,7 +56,7 @@ app.post('/upload', upload.single('video'), (req, res) => {
     .run();
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; 
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
