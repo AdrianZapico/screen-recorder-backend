@@ -4,52 +4,45 @@ import multer from 'multer';
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-// Obtendo o diretório atual
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 
-// Habilitar CORS
-
+// Habilitar CORS e permitir a origem específica
+const allowedOrigins = ['https://screen-recorder-react.netlify.app']; // Adicione seu domínio aqui
 app.use(cors({
-    origin: 'https://screen-recorder-react.netlify.app/',  
-  }));
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) { // Permitir requisições locais
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+}));
 
-
+// Configuração do Multer para salvar o arquivo temporariamente
 const upload = multer({ dest: 'uploads/' });
 
-
+// Rota para upload de vídeos
 app.post('/upload', upload.single('video'), (req, res) => {
   if (!req.file) {
-    console.error('Nenhum arquivo enviado');
     return res.status(400).send('Nenhum arquivo enviado.');
   }
 
   const inputFilePath = req.file.path;
   const outputFilePath = path.join(__dirname, 'uploads', `${Date.now()}.mp4`);
 
-  console.log('Arquivo recebido:', inputFilePath);
-  console.log('Caminho do arquivo de saída:', outputFilePath);
-
-
+  // Convertendo o arquivo .webm para .mp4 com FFmpeg
   ffmpeg(inputFilePath)
     .output(outputFilePath)
     .withVideoCodec('libx264')
     .withAudioCodec('aac')
     .on('end', () => {
-      console.log('Conversão finalizada');
-   
       res.download(outputFilePath, 'converted-video.mp4', (err) => {
         if (err) {
           console.error('Erro ao enviar o arquivo:', err);
         }
-      
-        fs.unlinkSync(inputFilePath); 
-        fs.unlinkSync(outputFilePath); 
+        fs.unlinkSync(inputFilePath); // Deletando o arquivo original
+        fs.unlinkSync(outputFilePath); // Deletando o arquivo convertido
       });
     })
     .on('error', (err) => {
@@ -59,7 +52,7 @@ app.post('/upload', upload.single('video'), (req, res) => {
     .run();
 });
 
-const port = process.env.PORT || 3000; 
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
